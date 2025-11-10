@@ -1,5 +1,7 @@
 import React, {useState, useMemo, useEffect} from "react";
 import moment from "moment";
+import StatusBadge from "./common/StatusBadge";
+import PriorityBadge from "./common/PriorityBadge";
 
 const TaskListTable = ({tableData}) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,14 +49,10 @@ const TaskListTable = ({tableData}) => {
               <tr key={task._id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="py-3 px-4 text-gray-700 text-[13px]">{task.title}</td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 border border-gray-200">
-                    {task.status}
-                  </span>
+                  <StatusBadge status={task.status} className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 border border-gray-200" />
                 </td>
                 <td className="py-3 px-4">
-                  <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 border border-gray-200">
-                    {task.priority}
-                  </span>
+                  <PriorityBadge priority={task.priority} className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 border border-gray-200" />
                 </td>
                 <td className="py-3 px-4 text-gray-700 text-[13px] hidden md:table-cell">
                   {task.createdAt ? moment(task.createdAt).format("Do MMM YYYY") : "N/A"}

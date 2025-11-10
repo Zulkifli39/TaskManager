@@ -5,7 +5,7 @@ import {LuUser} from "react-icons/lu";
 import Modal from "../Modal";
 import AvatarGroup from "../AvatarGroup";
 
-const SelectUsers = ({selectedUsers, setSelectedUsers}) => {
+const SelectUsers = ({selectedUsers = [], setSelectedUsers}) => {
   const [allUsers, setAllUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempSelectedUsers, setTempSelectedUsers] = useState([]);
@@ -61,9 +61,15 @@ const SelectUsers = ({selectedUsers, setSelectedUsers}) => {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Select Users">
         <div className="space-y-4 h-[60vh] overflow-y-auto">
-          {allUsers.map((user) => (
-            <div key={user.id} className="flex items-center gap-4 p-3 border-b border-gray-200  ">
-              <img src={user.profileImageUrl} alt={user.name} className="w-10 h-10 rounded-full" />
+          {allUsers.map((user,index) => (
+            <div key={index} className="flex items-center gap-4 p-3 border-b border-gray-200  ">
+            {user.profileImageUrl && (
+  <img
+    src={user.profileImageUrl}
+    alt={user.name}
+    className="w-10 h-10 rounded-full"
+  />
+)}
               <div className="flex-1">
                 <p className="font-medium text-gray-800 ">{user.name}</p>
                 <p className="text-[13px] text-gray-500">{user.email}</p>

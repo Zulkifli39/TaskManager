@@ -91,7 +91,8 @@ const createTask = async (req, res) => {
       priority,
       dueDate,
       assignedTo,
-      CreatedBy: req.user._id,
+      // CreatedBy: req.user._id,
+      createdBy: req.user._id,
       todoCheckList,
       attachments,
     });

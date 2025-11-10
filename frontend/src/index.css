@@ -46,3 +46,16 @@
 .form-input {
   @apply w-full text-sm text-black outline-none bg-white border border-slate-100 px-2.5 py-3 rounded-md mt-2 placeholder:text-gray-500;
 }
+
+
+.add-btn {
+  @apply w-auto min-w-[130px] flex items-center justify-center gap-1.5
+         text-sm font-medium text-white bg-blue-600 
+         border border-blue-700 rounded-lg px-5 py-2 
+         cursor-pointer shadow-md hover:bg-blue-700 hover:border-blue-800 
+         active:scale-[0.98] transition-all duration-200;
+}
+
+.add-btn:disabled {
+  @apply bg-blue-400 border-blue-400 cursor-not-allowed opacity-70;
+}
