@@ -5,7 +5,7 @@ import {LuUser} from "react-icons/lu";
 import Modal from "../Modal";
 import AvatarGroup from "../AvatarGroup";
 
-const SelectUsers = ({selectedUsers = [], setSelectedUsers}) => {
+const SelectUsers = ({selectedUsers, setSelectedUsers}) => {
   const [allUsers, setAllUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempSelectedUsers, setTempSelectedUsers] = useState([]);

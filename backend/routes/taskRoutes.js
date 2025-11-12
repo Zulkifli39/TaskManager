@@ -17,7 +17,7 @@ const {
 // Task Management Routes
 router.get("/dashboard-data", protect, adminOnly, getDashboardData);
 router.get("/user-dashboard-data", protect, getUserDashboardData);
-router.get("/", protect, adminOnly, getTasks);
+router.get("/", protect, getTasks);
 router.get("/:id", protect, getTaskById);
 router.post("/", protect, adminOnly, createTask);
 router.put("/:id", protect, updateTask);

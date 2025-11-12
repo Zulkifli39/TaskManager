@@ -20,3 +20,11 @@ const uploadImage = async (imageFile) => {
 };
 
 export default uploadImage;
+
+
+
+
+
+
+
+

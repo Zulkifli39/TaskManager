@@ -1,8 +1,8 @@
 const Task = require("../models/Task");
 const User = require("../models/User");
-
 const excelJS = require("exceljs");
 
+// === EXPORT TASKS REPORT ===
 const exportTasksReport = async (req, res) => {
   try {
     const tasks = await Task.find().populate("assignedTo", "name email profileImageUrl");
@@ -10,44 +10,60 @@ const exportTasksReport = async (req, res) => {
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet("Tasks Report");
 
-    worksheet.columss = [
-      {header: "Task ID", key: "_id", width: 25},
-      {header: "Title", key: "title", width: 25},
-      {header: "Description", key: "description", width: 25},
-      {header: "Priority", key: "priority", width: 25},
-      {header: "Status", key: "status", width: 25},
-      {header: "Due Date", key: "dueDate", width: 25},
-      {header: "Assigned To", key: "assignedTo", width: 25},
+    //  Kolom worksheet
+    worksheet.columns = [
+      { header: "Task ID", key: "_id", width: 25 },
+      { header: "Title", key: "title", width: 25 },
+      { header: "Description", key: "description", width: 30 },
+      { header: "Priority", key: "priority", width: 15 },
+      { header: "Status", key: "status", width: 20 },
+      { header: "Due Date", key: "dueDate", width: 20 },
+      { header: "Assigned To", key: "assignedTo", width: 40 },
     ];
 
+    //  Isi data
     tasks.forEach((task) => {
-      const assignedTo = task.assignedTo.map((user) => `${user.name} (${user.email})`).join(", ");
+      // Pastikan assignedTo adalah array
+      let assignedToNames = "Unassigned";
+      if (Array.isArray(task.assignedTo) && task.assignedTo.length > 0) {
+        assignedToNames = task.assignedTo
+          .map((user) => `${user.name} (${user.email})`)
+          .join(", ");
+      }
 
       worksheet.addRow({
-        _id: task._id,
+        _id: task._id.toString(),
         title: task.title,
-        description: task.description,
-        priority: task.priority,
-        status: task.status,
-        dueDate: task.dueDate.toISOString().split("T")[0],
-        assignedTo: assignedTo || "Unassigned",
+        description: task.description || "-",
+        priority: task.priority || "-",
+        status: task.status || "-",
+        dueDate: task.dueDate ? task.dueDate.toISOString().split("T")[0] : "-",
+        assignedTo: assignedToNames,
       });
     });
 
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    //  Kirim file Excel
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.setHeader("Content-Disposition", "attachment; filename=tasks_report.xlsx");
 
-    return workbook.xlsx.write(res).then(() => res.end());
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (error) {
-    res.status(500).json({message: "Server Error", error: error.message});
+    console.error("Error exporting tasks:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
+// === EXPORT USERS REPORT ===
 const exportUsersReport = async (req, res) => {
   try {
     const users = await User.find().select("name email _id").lean();
-    const userTasks = await Task.find().populate("assignedTo", "name email profileImageUrl");
+    const userTasks = await Task.find().populate("assignedTo", "name email");
 
+    // Pemetaan user → jumlah tugas
     const userTaskMap = {};
     users.forEach((user) => {
       userTaskMap[user._id] = {
@@ -61,16 +77,22 @@ const exportUsersReport = async (req, res) => {
     });
 
     userTasks.forEach((task) => {
-      if (task.assignedTo) {
+      if (Array.isArray(task.assignedTo)) {
         task.assignedTo.forEach((assignedUser) => {
-          if (userTaskMap[assignedUser._id]) {
-            userTaskMap[assignedUser._id].taskCount += 1;
-            if (task.status === "Pending") {
-              userTaskMap[task.assignedTo._id].pendingTasks += 1;
-            } else if (task.status === "In Progress") {
-              userTaskMap[task.assignedTo._id].inProgressTasks += 1;
-            } else if (task.status === "Completed") {
-              userTaskMap[task.assignedTo._id].completedTasks += 1;
+          const userData = userTaskMap[assignedUser._id];
+          if (userData) {
+            userData.taskCount += 1;
+
+            switch (task.status) {
+              case "Pending":
+                userData.pendingTasks += 1;
+                break;
+              case "In Progress":
+                userData.inProgressTasks += 1;
+                break;
+              case "Completed":
+                userData.completedTasks += 1;
+                break;
             }
           }
         });
@@ -81,25 +103,28 @@ const exportUsersReport = async (req, res) => {
     const worksheet = workbook.addWorksheet("Users Report");
 
     worksheet.columns = [
-      {header: "Name", key: "name", width: 25},
-      {header: "Email", key: "email", width: 25},
-      {header: "Task Count", key: "taskCount", width: 25},
-      {header: "Pending Tasks", key: "pendingTasks", width: 25},
-      {header: "In Progress Tasks", key: "inProgressTasks", width: 25},
-      {header: "Completed Tasks", key: "completedTasks", width: 25},
+      { header: "Name", key: "name", width: 25 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Task Count", key: "taskCount", width: 15 },
+      { header: "Pending Tasks", key: "pendingTasks", width: 15 },
+      { header: "In Progress Tasks", key: "inProgressTasks", width: 20 },
+      { header: "Completed Tasks", key: "completedTasks", width: 20 },
     ];
 
-    Object.values(userTaskMap).forEach((user) => {
-      worksheet.addRow(user);
-    });
+    Object.values(userTaskMap).forEach((user) => worksheet.addRow(user));
 
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", "attachment; filename=tasks_report.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=users_report.xlsx");
 
-    return workbook.xlsx.write(res).then(() => res.end());
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (error) {
-    res.status(500).json({message: "Server Error", error: error.message});
+    console.error("Error exporting users:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
-module.exports = {exportTasksReport, exportUsersReport};
+module.exports = { exportTasksReport, exportUsersReport };

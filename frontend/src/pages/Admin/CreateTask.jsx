@@ -9,10 +9,13 @@ import SelectDropDown from "../../components/inputs/SelectDropDown";
 import SelectUsers from "../../components/inputs/SelectUsers";
 import TodoListInput from "../../components/inputs/TodoListInput";
 import AddAttachmentInput from "../../components/inputs/AddAttachmentInput";
+import Modal from "../../components/Modal";
+import DeleteAlert from "../../components/DeleteAlert";
 
 import { PRIORITY_DATA } from "../../utils/data";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
+import { useEffect } from "react";
 
 const CreateTask = () => {
   const navigate = useNavigate();
@@ -28,6 +31,9 @@ const CreateTask = () => {
     todoCheckList: [],
     attachments: [],
   });
+
+
+  const [currentTask, setCurrentTask] = useState(null)
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,10 +86,60 @@ const createTask = async () => {
   }
 };
 
-  // 🔹 Update Task (placeholder)
-  const updateTask = async () => {
-    toast("Update task logic coming soon...");
-  };
+const updateTask = async () => {
+  setLoading(true);
+  try {
+    const todoList = taskData.todoCheckList?.map((item) => {
+      if (typeof item === "object") {
+        return {
+          title: item.title,
+          completed: item.completed || false,
+        };
+      }
+
+      // Jika item berupa string (baru ditambahkan)
+      const prevTodoCheckList = currentTask?.todoCheckList || [];
+      const matchedTask = prevTodoCheckList.find(
+        (task) => task.title === item
+      );
+
+      return {
+        title: item,
+        completed: matchedTask?.completed || false,
+      };
+    });
+
+    // Payload lengkap untuk dikirim ke backend
+    const payload = {
+      ...taskData,
+      dueDate: new Date(taskData.dueDate).toISOString(),
+      todoCheckList: todoList,
+    };
+
+    console.log("📤 Payload update task:", payload);
+
+    // Pastikan menggunakan PUT dengan path yang benar
+    const response = await axiosInstance.put(
+      API_PATHS.TASK.UPDATE_TASK(taskId),
+      payload
+    );
+
+    toast.success("Task updated successfully");
+
+    // Perbarui data di state agar form langsung sinkron
+    if (response.data?.updateTask) {
+      setCurrentTask(response.data.updateTask);
+    }
+
+    navigate("/admin/tasks");
+
+  } catch (error) {
+    console.error("Error updating task:", error.response?.data || error);
+    toast.error("Failed to update task");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 🔹 Validasi & Submit
   const handleSubmit = async () => {
@@ -100,10 +156,58 @@ const createTask = async () => {
       updateTask();
       return;
     }
-
     createTask();
-
   };
+
+const getTaskDetailById = async (id) => {
+  try {
+    const response = await axiosInstance.get(API_PATHS.TASK.GET_TASK_BY_ID(id));
+
+    if (response.data) {
+      const taskInfo = response.data;
+
+      setCurrentTask(taskInfo);
+
+      setTaskData({
+        title: taskInfo.title || "",
+        description: taskInfo.description || "",
+        priority: taskInfo.priority || "Low",
+        dueDate: taskInfo.dueDate
+          ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
+          : "",
+        assignedTo: taskInfo?.assignedTo?.map((user) => user._id) || [], 
+        todoCheckList:
+          taskInfo.todoCheckList?.map((item) => ({
+            title: item.title,
+            completed: item.completed,
+          })) || [],
+        attachments: taskInfo.attachments || [],
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching task by ID:", error);
+  }
+};
+
+
+  // Delete Task
+  const deleteTask = async () => {
+    try {
+      await axiosInstance.delete(API_PATHS.TASK.DELETE_TASK(taskId));
+      setOpenDeleteAlert(false);
+      toast.success("Expense detail deleted succesfully");
+      navigate("/admin/tasks");
+    } catch (error) {
+      console.error("Error deleting task:", error.response?.data?.message || error.message);
+    }
+
+  }
+
+useEffect(() => {
+  if (taskId) {
+    getTaskDetailById(taskId);
+  }
+}, [taskId]);
 
   return (
     <DashboardLayout activeMenu="Create Task">
@@ -219,7 +323,16 @@ const createTask = async () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+
+
+
+      <Modal isOpen={openDeleteAlert} onClose={() => setOpenDeleteAlert(false)}
+      title="Delete Task"
+       >
+          <DeleteAlert content="Are youn sure you want to delete this task?" onDelete={() => deleteTask()}/>
+       </Modal>
+
+      </DashboardLayout>
   );
 };
 
