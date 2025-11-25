@@ -6,7 +6,7 @@ import { API_PATHS } from "../../utils/apiPaths";
 import toast from "react-hot-toast";
 import moment from "moment";
 import AvatarGroup from "../../components/AvatarGroup";
-import { LuSquareArrowOutUpRight } from "react-icons/lu";
+import { LuSquareArrowOutUpRight } from "react-icons/lu"; 
 
 const ViewTasksDetails = () => {
   const { id } = useParams();
@@ -165,7 +165,7 @@ const ViewTasksDetails = () => {
 
               {/* Attachments */}
               {task?.attachments?.length > 0 && (
-                <div className="mt-4">
+                <div className="mt-4">x 
                   <label className="text-xs font-medium text-slate-500">
                     Attachments
                   </label>
